@@ -3,7 +3,7 @@ import json
 from typing import List
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from retrieveAlbums import getAlbum
+from RetrieveAlbums import getAlbum
 
 PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
 
