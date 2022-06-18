@@ -4,7 +4,7 @@ import urllib.request
 
 LINK_URI_INDEX = 30
 
-def getAlbum():
+def getAlbums():
         
     req = urllib.request.Request(url='https://www.albumoftheyear.org/ratings/6-highest-rated/2022/1', headers={'User-Agent': 'Mozilla/5.0'})
     html = urllib.request.urlopen(req).read()
@@ -17,5 +17,3 @@ def getAlbum():
         albumList.append(name.get("content", None))
 
     return albumList
-
-getAlbum()
