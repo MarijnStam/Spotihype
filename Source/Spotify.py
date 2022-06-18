@@ -1,33 +1,23 @@
-import sys
-import json
-from typing import List
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from WebScaper import getAlbum
+from dotenv import find_dotenv, load_dotenv
 
+#Load our Spotipy enviroment variables 
+load_dotenv(find_dotenv())
 PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
 
-def main():
+    # for x in albumList:
+    #     spotifyAlbumList = spotifyInterface.album(x)
 
-    spotifyInterface = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
- 
+    # for x in albumList:
+    #     album = spotifyInterface.album_tracks(x)
+    #     for y in album['items']:
+    #         spotifyInterface.playlist_add_items(PLAYLIST_ID, [y['id']])
 
-    albumList = getAlbum()
-    
-    for x in albumList:
-        spotifyAlbumList = spotifyInterface.album(x)
+def getAlbumURI(albumName=None):
+    results = sp.search(q = "album:" + albumName, type = "album")
 
-    for x in albumList:
-        album = spotifyInterface.album_tracks(x)
-        for y in album['items']:
-            spotifyInterface.playlist_add_items(PLAYLIST_ID, [y['id']])
-        
-
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('Done, interrupted')    
-        sys.exit(0)
+    # get the first album uri
+    album_id = results['albums']['items'][0]['uri']
+    print(album_id.split(":")[2])

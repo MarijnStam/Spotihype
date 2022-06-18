@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
 import os
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 #Load our enviroment variables 
-load_dotenv()
+load_dotenv(find_dotenv())
 TOKEN               = os.getenv('DISCORD_TOKEN')
 FORUM_CHANNEL_ID    = os.getenv('DISCORD_FORUM_CHANNEL')
 
