@@ -1,7 +1,9 @@
 import DiscordBot
+import Spotify as sp
 
 def main():
-    DiscordBot.startBot()
+    # DiscordBot.startBot()
+    sp.retrieveAlbumsFromPlaylist("bla")
 
 
 if __name__ == "__main__":
