@@ -1,3 +1,4 @@
+from msilib.schema import Error
 import discord
 from discord.ext import commands
 import os
@@ -31,19 +32,34 @@ async def listAlbums(ctx):
 
 @bot.command(
 help="Add albums (from static list for now) to your AOTY playlist",
+args="Amount: Number of albums you want to add. 1-20"
 brief="Adds albums to your list"
 )
-async def addAlbums(ctx):
+async def addAlbums(ctx, arg: int = 5):
+
+    #Sanity check the input
+    if not isinstance(arg, int):
+        await ctx.send(f"Please enter the amount of albums to add as a number")
+
+    amount = int(arg)
+    if((amount <= 0) or (amount >= 21)):
+        await ctx.send(f"Please enter a valid range between 0 - 20")
+        return
+
     albumList = wb.getAlbums()
 
     for album in albumList:
         print(album)
         uri = sp.getAlbumURI(album)
-        sp.addAlbumToAOTY(uri)
+        sp.addAlbumToPlaylist(uri, sp.AOTY_PLAYLIST_ID)
+        #TODO Add some extra info instead of just the name here. Maybe Embed with img
         await ctx.send(f"Added: {album}")
     
 
 
 def startBot():
     print("Starting bot")
-    bot.run(TOKEN)
+    try:
+        bot.run(TOKEN)
+    except Error as e:
+        print("Aah!")
