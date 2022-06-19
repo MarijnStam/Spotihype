@@ -1,3 +1,4 @@
+from mimetypes import init
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import find_dotenv, load_dotenv
@@ -8,39 +9,37 @@ AOTY_PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
 
 class Album:
-    """Class for holding an album object
-    """
-    def __init__(self, artist = None, name = None, uri = None, img = None, link=None):
-        self.artist = artist
-        self.uri = uri
-        self.name = name
-        self.img = img
-        self.link = link
-    def __str__(self) -> str:
-        return f"Artist: {self.artist}\nName: {self.name}\nURI: {self.uri}\n"
-
-def getAlbum(artistAlbum: tuple=None):
-    """Gets album information based on the name of the album retrieved from the web
-
+    """Class for holding an album object. Can be initialized with either artist/album name or album URI
+    
     Args:
         artistAlbum (tuple): tuple of (artist, album). Defaults to None.
+    Args:
+        uri (string): tuple of (artist, album). Defaults to None.
 
     Returns:
         Album object
     """
-    results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
+    def __init__(self, artistAlbum: tuple=None, uri: str=None):
+        if artistAlbum is not None:
+        #Use name/album to find album data
+            results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
+            self.artist = results['albums']['items'][0]['artists'][0]['name']
+            self.uri = results['albums']['items'][0]['uri'].split(":")[2]
+            self.name = results['albums']['items'][0]['name']
+            self.img = results['albums']['items'][0]['images'][0]['url']
+            self.link = results['albums']['items'][0]['external_urls']['spotify']
+        #Use URI to find album data
+        elif uri is not None:
+            results = sp.album(uri)
+            self.artist = results['artists'][0]['name']
+            self.uri = results['uri'].split(":")[2]
+            self.name = results['name']
+            self.img = results['images'][0]['url']
+            self.link = results['external_urls']['spotify']
 
-    album = Album()
-
-    #Populate the album object with the relevant data
-    album.uri = results['albums']['items'][0]['uri'].split(":")[2]
-    album.name = results['albums']['items'][0]['name']
-    album.img = results['albums']['items'][0]['images'][0]['url']
-    album.artist = results['albums']['items'][0]['artists'][0]['name']
-    album.link = results['albums']['items'][0]['external_urls']['spotify']
-
-    return album
-
+    def __str__(self) -> str:
+        return f"Artist: {self.artist}\nName: {self.name}\nURI: {self.uri}\n"
+  
 def addAlbumToPlaylist(albumURI: str=None, playlist: str=None):
     """Add an album to a playlist given their respective ids
 

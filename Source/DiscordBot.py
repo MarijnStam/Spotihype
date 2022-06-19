@@ -35,11 +35,7 @@ help="Add albums (from static list for now) to your AOTY playlist",
 brief="Adds albums to your list"
 )
 async def addAlbums(ctx, arg: int = 5):
-
-    #Sanity check the input
-    if not isinstance(arg, int):
-        await ctx.send(f"Please enter the amount of albums to add as a number")
-
+    
     amount = int(arg)
     if((amount <= 0) or (amount >= 21)):
         await ctx.send(f"Please enter a valid range between 0 - 20")
@@ -48,7 +44,7 @@ async def addAlbums(ctx, arg: int = 5):
     albumList = wb.getAlbums()
 
     for i in range(0, amount):
-        album = sp.getAlbum(albumList[i])
+        album = sp.Album(albumList[i])
         sp.addAlbumToPlaylist(album.uri, sp.AOTY_PLAYLIST_ID)
         playlistName, playlistLink = sp.getPlaylist(sp.AOTY_PLAYLIST_ID)
 
