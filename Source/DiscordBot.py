@@ -32,7 +32,6 @@ async def listAlbums(ctx):
 
 @bot.command(
 help="Add albums (from static list for now) to your AOTY playlist",
-args="Amount: Number of albums you want to add. 1-20"
 brief="Adds albums to your list"
 )
 async def addAlbums(ctx, arg: int = 5):
@@ -48,18 +47,25 @@ async def addAlbums(ctx, arg: int = 5):
 
     albumList = wb.getAlbums()
 
-    for album in albumList:
-        print(album)
-        uri = sp.getAlbumURI(album)
-        sp.addAlbumToPlaylist(uri, sp.AOTY_PLAYLIST_ID)
-        #TODO Add some extra info instead of just the name here. Maybe Embed with img
-        await ctx.send(f"Added: {album}")
+    for i in range(0, amount):
+        album = sp.getAlbum(albumList[i])
+        sp.addAlbumToPlaylist(album.uri, sp.AOTY_PLAYLIST_ID)
+        playlistName, playlistLink = sp.getPlaylist(sp.AOTY_PLAYLIST_ID)
+
+#MAKE INTO ONE BIG EMBED INSTEAD, TOO MUCH GOING ON
+        embed=discord.Embed(
+        title=f"{album.artist} - {album.name}",
+            url=f"{album.link}",
+            color=discord.Color.green())
+        embed.set_thumbnail(url=album.img)
+        embed.add_field(name="Added to playlist", value=f"[{playlistName}]({playlistLink})")
+        #TODO Make dynamic
+        embed.set_footer(text="Retrieved from highest-rated/2022")
+
+        await ctx.send(embed=embed)
     
 
 
 def startBot():
     print("Starting bot")
-    try:
-        bot.run(TOKEN)
-    except Error as e:
-        print("Aah!")
+    bot.run(TOKEN)
