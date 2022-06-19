@@ -7,9 +7,10 @@ def getAlbums():
     """Retrieves a list of album names from a rating site
 
     Returns:
-        List: :ist of album name strings
+        List of tuples: : [(artist, album), (artist, album), etc]
     """
 
+    #Make a list of tuples for the albums. [(artist, album), (artist, album), etc]
     albumList = []
     
     try:
@@ -26,10 +27,10 @@ def getAlbums():
         return 
 
     soup = BeautifulSoup(html, features="html.parser")
-    #Retrieve the names of all Artist - Album entries on the webpage
-    #Append them into a list
 
+    #Results are given as "Artist - Album". Split the string at "-" and make a tuple (artist, album)
+    #Append the tuple to the list
     for name in soup.find_all("meta", itemprop="name"):
-        albumList.append(name.get("content", None))
+        albumList.append(tuple(name.get("content", None).split("-")))
 
     return albumList
