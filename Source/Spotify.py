@@ -1,4 +1,3 @@
-from mimetypes import init
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import find_dotenv, load_dotenv
@@ -7,6 +6,9 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 AOTY_PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
+
+class NotFoundError(Exception):
+    pass
 
 class Album:
     """Class for holding an album object. Can be initialized with either artist/album name or album URI
@@ -23,19 +25,28 @@ class Album:
         if artistAlbum is not None:
         #Use name/album to find album data
             results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
-            self.artist = results['albums']['items'][0]['artists'][0]['name']
-            self.uri = results['albums']['items'][0]['uri'].split(":")[2]
-            self.name = results['albums']['items'][0]['name']
-            self.img = results['albums']['items'][0]['images'][0]['url']
-            self.link = results['albums']['items'][0]['external_urls']['spotify']
+            try:
+                self.artist = results['albums']['items'][0]['artists'][0]['name']
+                self.uri = results['albums']['items'][0]['uri'].split(":")[2]
+                self.name = results['albums']['items'][0]['name']
+                self.img = results['albums']['items'][0]['images'][0]['url']
+                self.link = results['albums']['items'][0]['external_urls']['spotify']
+            except IndexError as e:
+                print(results)
+                raise NotFoundError(f"Album :{artistAlbum[1]}{artistAlbum[0]} was not found")
+
         #Use URI to find album data
         elif uri is not None:
             results = sp.album(uri)
-            self.artist = results['artists'][0]['name']
-            self.uri = results['uri'].split(":")[2]
-            self.name = results['name']
-            self.img = results['images'][0]['url']
-            self.link = results['external_urls']['spotify']
+            try:
+                self.artist = results['artists'][0]['name']
+                self.uri = results['uri'].split(":")[2]
+                self.name = results['name']
+                self.img = results['images'][0]['url']
+                self.link = results['external_urls']['spotify']
+            except IndexError as e:
+                print(results)
+                raise NotFoundError(f"Album :{artistAlbum[1]}{artistAlbum[0]} was not found")
 
     def __str__(self) -> str:
         return f"Artist: {self.artist}\nName: {self.name}\nURI: {self.uri}\n"
