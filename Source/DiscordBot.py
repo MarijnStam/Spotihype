@@ -10,7 +10,8 @@ import db
 #Load our enviroment variables 
 load_dotenv(find_dotenv())
 TOKEN               = os.getenv('DISCORD_TOKEN')
-FORUM_CHANNEL_ID    = os.getenv('DISCORD_FORUM_CHANNEL')
+FORUM_CHANNEL_ID    = os.getenv('DISCORD_CHANNEL')
+TESTING_CHANNEL_ID = os.getenv('DISCORD_TESTING_CHANNEL_ID')
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -19,16 +20,14 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 async def on_ready():
     #Singleton variables for interacting with the discord server
     global channel
-
     print('We have logged in as {0.user}'.format(bot))
-    channel = bot.get_channel(int(FORUM_CHANNEL_ID))
 
 @bot.command(
-	help="Prints a list of all albums in a playlist",
-	brief="Prints a list of all albums in a playlist"
+    help="Prints a list of all albums in a playlist",
+    brief="Prints a list of all albums in a playlist"
 )
 async def listAlbums(ctx):
-	await ctx.send("List of some albums")
+    await ctx.send("List of some albums")
 
 @bot.command(
 help="Add albums (from static list for now) to your AOTY playlist",
@@ -63,9 +62,6 @@ async def addAlbums(ctx, arg: int = 5):
         #     amount = amount + 1
         #     continue
 
-        
-
-
 #MAKE INTO ONE BIG EMBED INSTEAD, TOO MUCH GOING ON
         embed=discord.Embed(
         title=f"{album.artist} - {album.name}",
@@ -78,7 +74,6 @@ async def addAlbums(ctx, arg: int = 5):
 
         await ctx.send(embed=embed)
     
-
 
 def startBot():
     print("Starting bot")
