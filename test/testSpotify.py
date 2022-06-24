@@ -1,8 +1,7 @@
 import unittest
-import sys
 from dotenv import load_dotenv, find_dotenv
-sys.path.append('Source')
-import Spotify as sp
+
+from Source import Spotify as sp
 
 load_dotenv(find_dotenv())
 
@@ -26,5 +25,7 @@ class SpotifyTest(unittest.TestCase):
             self.assertIsNotNone(album.name)
             self.assertIsNotNone(album.artist)
 
-if __name__ == '__main__':
-    unittest.main()
+    def testGetPlaylist(self):
+        name, link = sp.getPlaylist(sp.AOTY_PLAYLIST_ID)
+        self.assertIsNotNone(name)
+        self.assertIsNotNone(link)
