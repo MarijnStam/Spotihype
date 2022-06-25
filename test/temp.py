@@ -1,9 +1,6 @@
 import pytest
-from dotenv import load_dotenv, find_dotenv
 
 from Source import Spotify as sp
-
-load_dotenv(find_dotenv())
 
 name = [("Black Country - New Road", "Ants From Up There"), ()]
 uriName = '41ycYGcnhkDb3pFkL8vSPJ'
