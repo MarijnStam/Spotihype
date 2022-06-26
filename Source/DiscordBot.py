@@ -27,8 +27,16 @@ async def on_ready():
     help="Prints a list of all albums in a playlist",
     brief="Prints a list of all albums in a playlist"
 )
-async def listAlbums(ctx):
-    await ctx.send("List of some albums")
+async def review(ctx):
+    albums = sp.getPlaylistTracks(sp.AOTY_PLAYLIST_ID)
+    for album in albums:
+        embed=discord.Embed(
+        title=f"{album.artist} - {album.name}",
+            url=f"{album.link}",
+            color=discord.Color.blue())
+        embed.set_thumbnail(url=album.img)
+        embed.add_field(name="Like / Dislike? React to this message with:", value=":thumbsup: / :thumbsdown:")
+        await ctx.send(embed=embed)
 
 @bot.command(
 help="Add albums (from static list for now) to your AOTY playlist",
