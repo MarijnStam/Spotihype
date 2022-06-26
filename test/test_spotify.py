@@ -17,8 +17,7 @@ def test_album_init(name, uriName):
     assert (album.name) != None
     assert (album.uri) != None
 
-
-def testGetPlaylist():
+def test_get_playlist():
     name, link = sp.getPlaylist(sp.AOTY_PLAYLIST_ID)
     assert name != None
     assert link != None

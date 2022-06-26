@@ -21,7 +21,7 @@ class Album:
     Returns:
         Album object
     """
-    def __init__(self, artistAlbum: tuple=None, uri: str=None):
+    def __init__(self, artistAlbum: tuple=None, uri: str=None, json: str=None):
         if artistAlbum is not None:
         #Use name/album to find album data
             results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
@@ -62,10 +62,29 @@ def addAlbumToPlaylist(albumURI: str=None, playlist: str=None):
     for y in albumTracks['items']:
         sp.playlist_add_items(playlist, [y['id']])
 
-def retrieveAlbumsFromPlaylist(playlist: str=None):
-    albumOffset = 0
+def getPlaylistTracks(playlist: str=None):
+    """Retrieves the tracks of a playlist given its ID
+
+    Args:
+        playlist (str, optional): URI of the playlist. Defaults to None.
+
+    Returns:
+        list: list of Album objects
+    """
     albumList = []
-    results = sp.playlist_tracks(playlist, limit=5, offset=albumOffset, fields="items(track(album(id)))")
+    uriList = []
+    results = sp.playlist_tracks(playlist, fields="items(track(album(id))), next", limit=100)
+    tracks = results['items']
+    while results['next']:
+        results = sp.next(results)
+        tracks.extend(results['items'])
+    for track in tracks:
+        albumUri = track['track']['album']['id']
+        #add albumURI to albumList if it is not already in the list (to avoid duplicates)
+        if albumUri not in uriList:
+            albumList.append(Album(uri=albumUri))
+            uriList.append(albumUri)
+    return albumList
         
 def moveAlbum(albumURI: str=None, sourcePlaylist: str=None, targetPlaylist: str=None):
     pass
