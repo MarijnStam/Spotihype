@@ -5,6 +5,7 @@ from dotenv import find_dotenv, load_dotenv
 #Load our Spotipy enviroment variables 
 load_dotenv(find_dotenv())
 AOTY_PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
+LIKED_PLAYLIST_ID = '2b6diSqGc06kqlJOUfADn0'
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
 
 class NotFoundError(Exception):
@@ -87,10 +88,15 @@ def getPlaylistTracks(playlist: str=None):
     return albumList
         
 def moveAlbum(albumURI: str=None, sourcePlaylist: str=None, targetPlaylist: str=None):
-    pass
+    albumTracks = sp.album_tracks(albumURI)
+    for y in albumTracks['items']:
+        sp.playlist_remove_all_occurrences_of_items(sourcePlaylist, [y['id']])
+        sp.playlist_add_items(targetPlaylist, [y['id']])
 
 def deleteAlbum(albumURI: str=None, playlist: str=None):
-    pass
+    albumTracks = sp.album_tracks(albumURI)
+    for y in albumTracks['items']:
+        sp.playlist_remove_all_occurrences_of_items(playlist, [y['id']])
 
 def getPlaylist(playlist_id: str=None):
     """Retrieves the name and the link to a playlist given its ID
