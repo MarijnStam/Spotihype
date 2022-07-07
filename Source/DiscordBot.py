@@ -23,6 +23,21 @@ async def on_ready():
     global channel
     print('We have logged in as {0.user}'.format(bot))
 
+@bot.event
+async def on_reaction_add(reaction, user):
+    if reaction.message.embeds[0].fields[0].name == "Like / Dislike? React to this message with:":
+        if reaction.emoji == "👍":
+            await reaction.message.channel.send("You liked the album! Moving to liked playlist")
+            await reaction.message.delete()
+
+        elif reaction.emoji == "👎":
+            await reaction.message.channel.send("You disliked the album, removing from playlist")
+            await reaction.message.delete()
+        
+        else:
+            await reaction.message.channel.send("Keeping this album in the playlist for now")
+            await reaction.message.delete()
+
 @bot.command(
     help="Prints a list of all albums in a playlist",
     brief="Prints a list of all albums in a playlist"
@@ -31,7 +46,7 @@ async def review(ctx):
     albums = sp.getPlaylistTracks(sp.AOTY_PLAYLIST_ID)
     for album in albums:
         embed=discord.Embed(
-        title=f"{album.artist} - {album.name}",
+            title=f"{album.artist} - {album.name}",
             url=f"{album.link}",
             color=discord.Color.blue())
         embed.set_thumbnail(url=album.img)
