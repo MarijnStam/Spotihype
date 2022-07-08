@@ -5,6 +5,7 @@ from dotenv import find_dotenv, load_dotenv
 #Load our Spotipy enviroment variables 
 load_dotenv(find_dotenv())
 AOTY_PLAYLIST_ID = '5hwjLoGifPEGBrBmNZxa0X'
+LIKED_PLAYLIST_ID = '2b6diSqGc06kqlJOUfADn0'
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public,user-library-read"))
 
 class NotFoundError(Exception):
@@ -21,7 +22,7 @@ class Album:
     Returns:
         Album object
     """
-    def __init__(self, artistAlbum: tuple=None, uri: str=None):
+    def __init__(self, artistAlbum: tuple=None, uri: str=None, json: str=None):
         if artistAlbum is not None:
         #Use name/album to find album data
             results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
@@ -62,16 +63,40 @@ def addAlbumToPlaylist(albumURI: str=None, playlist: str=None):
     for y in albumTracks['items']:
         sp.playlist_add_items(playlist, [y['id']])
 
-def retrieveAlbumsFromPlaylist(playlist: str=None):
-    albumOffset = 0
+def getPlaylistTracks(playlist: str=None):
+    """Retrieves the tracks of a playlist given its ID
+
+    Args:
+        playlist (str, optional): URI of the playlist. Defaults to None.
+
+    Returns:
+        list: list of Album objects
+    """
     albumList = []
-    results = sp.playlist_tracks(playlist, limit=5, offset=albumOffset, fields="items(track(album(id)))")
+    uriList = []
+    results = sp.playlist_tracks(playlist, fields="items(track(album(id))), next", limit=100)
+    tracks = results['items']
+    while results['next']:
+        results = sp.next(results)
+        tracks.extend(results['items'])
+    for track in tracks:
+        albumUri = track['track']['album']['id']
+        #add albumURI to albumList if it is not already in the list (to avoid duplicates)
+        if albumUri not in uriList:
+            albumList.append(Album(uri=albumUri))
+            uriList.append(albumUri)
+    return albumList
         
 def moveAlbum(albumURI: str=None, sourcePlaylist: str=None, targetPlaylist: str=None):
-    pass
+    albumTracks = sp.album_tracks(albumURI)
+    for y in albumTracks['items']:
+        sp.playlist_remove_all_occurrences_of_items(sourcePlaylist, [y['id']])
+        sp.playlist_add_items(targetPlaylist, [y['id']])
 
 def deleteAlbum(albumURI: str=None, playlist: str=None):
-    pass
+    albumTracks = sp.album_tracks(albumURI)
+    for y in albumTracks['items']:
+        sp.playlist_remove_all_occurrences_of_items(playlist, [y['id']])
 
 def getPlaylist(playlist_id: str=None):
     """Retrieves the name and the link to a playlist given its ID
