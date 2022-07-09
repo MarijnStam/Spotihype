@@ -49,14 +49,12 @@ class Paginator(discord.ui.View):
         self.albumList = albumList
         super().__init__()
 
-    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
-    async def count(self, interaction: discord.Interaction, button: discord.ui.Button):
-        number = int(button.label) if button.label else 0
-        if number + 1 >= 5:
-            button.style = discord.ButtonStyle.green
-            button.disabled = True
-        button.label = str(number + 1)
+    @discord.ui.button(emoji="⬅" , style=discord.ButtonStyle.primary)
+    async def countLeft(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(view=self)
 
+    @discord.ui.button(emoji="➡", style=discord.ButtonStyle.primary)
+    async def countRight(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Make sure to update the message with our updated selves
         await interaction.response.edit_message(view=self)
 
@@ -101,12 +99,13 @@ async def review(interaction: discord.Interaction):
     #Embedlist supports up to 10 albums
     for index, album in zip(range(10), albums):
         embed=discord.Embed(
-            title=f"{album.artist} - {album.name}",
+            title=None,
             url=f"{album.link}",
             color=discord.Color.blue())
 
         embed.set_thumbnail(url=album.img)
-        embed.add_field(name="Like / Dislike? React to this message with:", value=":thumbsup: / :thumbsdown:")
+        embed.add_field(name="Album", value=album.name, inline=False)
+        embed.add_field(name="Artist", value=album.artist, inline=False)
         embedList.append(embed)
         
     url_view = Paginator(albumList=embedList)
