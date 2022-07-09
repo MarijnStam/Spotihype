@@ -42,25 +42,68 @@ class AlbumAction(ui.Modal, title='Album Review'):
 
 class Paginator(discord.ui.View):
     # Define the actual button
-    # When pressed, this increments the number displayed until it hits 5.
-    # When it hits 5, the counter button is disabled and it turns green.
-    # note: The name of the function does not matter to the library
     def __init__(self, albumList: list):
+        super().__init__()
         self.albumList = albumList
+        self.index = 0
+
+        #TODO Rewrite to callbacks and add a counter to the paginator
+
+    #Initialize the left button as disabled since we start on the first index
+    @discord.ui.button(emoji="⬅", disabled=True, custom_id="left")
+    async def countLeft(self, interaction: discord.Interaction, button: discord.ui.Button):
+        #Enable the button of the right button since we have just scrolled left
+        for item in self.children:
+            if item.custom_id == "right":
+                item.disabled = False
+
+        #Disable the button when we have reached the last index
+        if self.index == 1:
+            button.disabled=True
+            self.index = self.index - 1
+        elif self.index > 0:
+            self.index = self.index - 1
+        else:
+            return
+        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
+
+
+    @discord.ui.button(emoji="➡", custom_id="right")
+    async def countRight(self, interaction: discord.Interaction, button: discord.ui.Button):
+        #Enable the button of the left button since we have just scrolled right
+        for item in self.children:
+            if item.custom_id == "left":
+                item.disabled = False
+
+        #Disable the button when we have reached the last index
+        if self.index == len(self.albumList) - 2:
+            button.disabled=True
+            self.index = self.index + 1
+        elif self.index < len(self.albumList) - 1:
+            self.index = self.index + 1
+        else:
+            return
+        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
+
+class ReviewButtons(discord.ui.View):
+    # Define the actual button
+    def __init__(self):
         super().__init__()
 
-    @discord.ui.button(emoji="⬅" , style=discord.ButtonStyle.primary)
-    async def countLeft(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(view=self)
+    @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger, row=1)
+    async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print("Delete")
 
-    @discord.ui.button(emoji="➡", style=discord.ButtonStyle.primary)
-    async def countRight(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Make sure to update the message with our updated selves
-        await interaction.response.edit_message(view=self)
+    @discord.ui.button(label="Save", style=discord.ButtonStyle.success, row=1)
+    async def save(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print("Save")
 
+    @discord.ui.button(label="Review", style=discord.ButtonStyle.secondary, row=1)
+    async def review(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print("Review")
+    
 intents = discord.Intents.default()
 bot = SpotihypeBot(intents=intents)
-
 
 @bot.event
 async def on_ready():
@@ -99,7 +142,7 @@ async def review(interaction: discord.Interaction):
     #Embedlist supports up to 10 albums
     for index, album in zip(range(10), albums):
         embed=discord.Embed(
-            title=None,
+            title="Album Review",
             url=f"{album.link}",
             color=discord.Color.blue())
 
@@ -109,6 +152,9 @@ async def review(interaction: discord.Interaction):
         embedList.append(embed)
         
     url_view = Paginator(albumList=embedList)
+    reviewButtons = ReviewButtons()
+    for item in reviewButtons.children: 
+        url_view.add_item(item)
     await interaction.response.send_message(embed=embedList[0], view=url_view)
 
 @bot.tree.command(description="Add album to AOTY playlist")
