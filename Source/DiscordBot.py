@@ -4,6 +4,7 @@ from discord import ui
 import os
 from dotenv import find_dotenv, load_dotenv
 import sqlite3
+import traceback
 
 import WebScaper as wb
 import Spotify as sp
@@ -27,6 +28,37 @@ class SpotihypeBot(discord.Client):
         # This copies the global commands over to your guild.
         self.tree.copy_global_to(guild=GUILD)
         await self.tree.sync(guild=GUILD)
+
+class AlbumAction(ui.Modal, title='Album Review'):
+    name = ui.Select(placeholder="Album to review...", options=["option 1", "option 2", "option 3"])
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message(f'Thanks for your feedback, {self.name.value}!', ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        await interaction.response.send_message('Oops! Something went wrong.', ephemeral=True)
+        # Make sure we know what the error actually is
+        traceback.print_tb(error.__traceback__)
+
+class Paginator(discord.ui.View):
+    # Define the actual button
+    # When pressed, this increments the number displayed until it hits 5.
+    # When it hits 5, the counter button is disabled and it turns green.
+    # note: The name of the function does not matter to the library
+    def __init__(self, albumList: list):
+        self.albumList = albumList
+        super().__init__()
+
+    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
+    async def count(self, interaction: discord.Interaction, button: discord.ui.Button):
+        number = int(button.label) if button.label else 0
+        if number + 1 >= 5:
+            button.style = discord.ButtonStyle.green
+            button.disabled = True
+        button.label = str(number + 1)
+
+        # Make sure to update the message with our updated selves
+        await interaction.response.edit_message(view=self)
 
 intents = discord.Intents.default()
 bot = SpotihypeBot(intents=intents)
@@ -76,10 +108,9 @@ async def review(interaction: discord.Interaction):
         embed.set_thumbnail(url=album.img)
         embed.add_field(name="Like / Dislike? React to this message with:", value=":thumbsup: / :thumbsdown:")
         embedList.append(embed)
-        url_view = discord.ui.View()
-        url_view.add_item(discord.ui.Button(label='Go to Message', style=discord.ButtonStyle.url, url="http://localhost"))
-
-    await interaction.response.send_message(embeds=embedList, view=url_view)
+        
+    url_view = Paginator(albumList=embedList)
+    await interaction.response.send_message(embed=embedList[0], view=url_view)
 
 @bot.tree.command(description="Add album to AOTY playlist")
 @app_commands.describe(
