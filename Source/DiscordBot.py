@@ -1,3 +1,4 @@
+from subprocess import call
 import discord
 from discord import app_commands
 from discord import ui
@@ -29,77 +30,85 @@ class SpotihypeBot(discord.Client):
         self.tree.copy_global_to(guild=GUILD)
         await self.tree.sync(guild=GUILD)
 
-class AlbumAction(ui.Modal, title='Album Review'):
-    name = ui.Select(placeholder="Album to review...", options=["option 1", "option 2", "option 3"])
+class EmbedButton(ui.Button):
+    """Class for creating a discord button
 
-    async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f'Thanks for your feedback, {self.name.value}!', ephemeral=True)
+    Args:
+        ui.Button: Button needs to be subclassed
+    """
+    def __init__(self, callback=None, **kwargs):
+        #Init the button with kwargs elements
+        super().__init__(**kwargs)
+        if callback is not None:
+            self.callback = callback
+        
+class Paginator(ui.View):
+    """Class for making a paginator for the album list
 
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message('Oops! Something went wrong.', ephemeral=True)
-        # Make sure we know what the error actually is
-        traceback.print_tb(error.__traceback__)
-
-class Paginator(discord.ui.View):
-    # Define the actual button
+    Args:
+        ui.View: View needs to be subclassed
+    """
     def __init__(self, albumList: list):
         super().__init__()
         self.albumList = albumList
         self.index = 0
+        #Create the paginator buttons, pass the callbacks defined in this class
+        self.add_item(EmbedButton(callback=self.left, emoji="⬅", disabled=True, custom_id="left"))
+        self.add_item(EmbedButton(label=f"0 / {len(albumList) - 1}", custom_id="index", disabled=True))
+        self.add_item(EmbedButton(callback=self.right, emoji="➡", custom_id="right"))
 
-        #TODO Rewrite to callbacks and add a counter to the paginator
-
-    #Initialize the left button as disabled since we start on the first index
-    @discord.ui.button(emoji="⬅", disabled=True, custom_id="left")
-    async def countLeft(self, interaction: discord.Interaction, button: discord.ui.Button):
-        #Enable the button of the right button since we have just scrolled left
-        for item in self.children:
-            if item.custom_id == "right":
-                item.disabled = False
-
-        #Disable the button when we have reached the last index
-        if self.index == 1:
-            button.disabled=True
-            self.index = self.index - 1
-        elif self.index > 0:
-            self.index = self.index - 1
-        else:
-            return
-        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
-
-
-    @discord.ui.button(emoji="➡", custom_id="right")
-    async def countRight(self, interaction: discord.Interaction, button: discord.ui.Button):
-        #Enable the button of the left button since we have just scrolled right
-        for item in self.children:
-            if item.custom_id == "left":
-                item.disabled = False
+    #Callback function for the right button
+    async def right(self, interaction: discord.Interaction):
 
         #Disable the button when we have reached the last index
         if self.index == len(self.albumList) - 2:
-            button.disabled=True
-            self.index = self.index + 1
+            self.children[2].disabled=True
+            self.index += 1
         elif self.index < len(self.albumList) - 1:
-            self.index = self.index + 1
+            self.index += 1
         else:
             return
+    
+        #Set the left button disabled to False since we have scrolled right
+        #Update the index of the counter
+        self.children[0].disabled = False
+        self.children[1].label = f"{self.index} / {len(self.albumList) - 1}"
+
         await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
 
-class ReviewButtons(discord.ui.View):
+    async def left(self, interaction: discord.Interaction):            
+
+        #Disable the button when we have reached the first index
+        if self.index == 1:
+            self.children[0].disabled=True
+            self.index -= 1
+        elif self.index > 0:
+            self.index -= 1
+        else:
+            return
+        
+        #Set the right button disabled to False since we have scrolled left
+        #Update the index of the counter
+        self.children[2].disabled = False
+        self.children[1].label = f"{self.index} / {len(self.albumList) - 1}"
+
+        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
+
+class ReviewButtons(ui.View):
     # Define the actual button
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger, row=1)
-    async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="Delete", style=discord.ButtonStyle.danger, row=1)
+    async def delete(self, interaction: discord.Interaction, button: ui.Button):
         print("Delete")
 
-    @discord.ui.button(label="Save", style=discord.ButtonStyle.success, row=1)
-    async def save(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="Save", style=discord.ButtonStyle.success, row=1)
+    async def save(self, interaction: discord.Interaction, button: ui.Button):
         print("Save")
 
-    @discord.ui.button(label="Review", style=discord.ButtonStyle.secondary, row=1)
-    async def review(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="Review", style=discord.ButtonStyle.secondary, row=1)
+    async def review(self, interaction: discord.Interaction, button: ui.Button):
         print("Review")
     
 intents = discord.Intents.default()
