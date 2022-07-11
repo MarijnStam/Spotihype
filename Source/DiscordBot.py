@@ -283,6 +283,10 @@ async def review(interaction: discord.Interaction):
     albums = sp.getPlaylistAlbums(sp.AOTY_PLAYLIST_ID)
     embedList = []
 
+    if len(albums) == 0:
+        await interaction.followup.send(content="No albums in AOTY playlist")
+        return
+
     #Iterate through the albums retrieved and construct an Embed for each one
     #Appends the embed to the embedList
     for album in albums:
