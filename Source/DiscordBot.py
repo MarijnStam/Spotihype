@@ -1,3 +1,4 @@
+from ast import Add
 import discord
 from discord import app_commands
 from discord import ui
@@ -56,7 +57,8 @@ class EmbedButton(ui.Button):
             self.callback = callback
         
 class Paginator(ui.View):
-    """Class for creating a Discord paginator View to scroll through a list of Embeds
+    """Parent class for creating a Discord paginator View to scroll through a list of Embeds
+    This class is subclassed by `ReviewPaginator()` and `addPaginator()`
 
     Parameters
     ----------
@@ -141,18 +143,13 @@ class Paginator(ui.View):
 
         await interaction.response.edit_message(embed=self.embedList[self.index],view=self)
 
-class ReviewButtons(ui.View):
+class ReviewPaginator(Paginator):
     """Class for creating a Review view. Creates 3 buttons with callbacks for actions
 
     Parameters
     ----------
-    paginator : `Paginator`
-        The paginator object for this View, used to get the index and list of embeds
-
-    Attributes
-    ----------
-    paginator : `Paginator`
-        The paginator object for this View, used to get the index and list of embeds
+    embedList : `list`
+        The list of embeds to review
 
     Methods (callbacks only, not intended to be called directly)
     ----------
@@ -164,13 +161,12 @@ class ReviewButtons(ui.View):
         Callback when review button is pressed, user will be prompted for an album review
     """    
     # Define the actual buttons
-    def __init__(self, paginator: Paginator):
-        super().__init__()
-        #Add the paginator to this view
-        self.paginator = paginator
+    def __init__(self, embedList: list):    
+        super().__init__(embedList)
         self.add_item(EmbedButton(callback=self.__delete, label="Delete", style=discord.ButtonStyle.danger, row=1))
         self.add_item(EmbedButton(callback=self.__save, label="Save", style=discord.ButtonStyle.success, row=1))
         self.add_item(EmbedButton(callback=self.__review, label="Review", style=discord.ButtonStyle.primary, row=1))
+        
 
     async def __delete(self, interaction: discord.Interaction):
         """Callback on delete button press. Deletes the album from the AOTY list
@@ -180,11 +176,12 @@ class ReviewButtons(ui.View):
         interaction : discord.Interaction
             Interaction of the button press event
         """        
-        albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
-        self.paginator.embedList[self.paginator.index].title = "DELETED"
-        self.paginator.embedList[self.paginator.index].color = discord.Color.red()
+        albumURI = self.embedList[self.index].url.rsplit('/', 1)[-1]
+        self.embedList[self.index].title = "DELETED"
+        self.embedList[self.index].color = discord.Color.red()
+        await interaction.response.edit_message(embed=self.embedList[self.index])
         sp.deleteAlbum(albumURI, sp.AOTY_PLAYLIST_ID)
-        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
+        
 
     async def __save(self, interaction: discord.Interaction):
         """Callback on save button press. Saves the album to the saved list
@@ -194,11 +191,12 @@ class ReviewButtons(ui.View):
         interaction : discord.Interaction
             Interaction of the button press event
         """   
-        albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
-        self.paginator.embedList[self.paginator.index].title = "SAVED"
-        self.paginator.embedList[self.paginator.index].color = discord.Color.green()
+        albumURI = self.embedList[self.index].url.rsplit('/', 1)[-1]
+        self.embedList[self.index].title = "SAVED"
+        self.embedList[self.index].color = discord.Color.green()
+        await interaction.response.edit_message(embed=self.embedList[self.index])
         sp.moveAlbum(albumURI, sp.AOTY_PLAYLIST_ID, sp.LIKED_PLAYLIST_ID)
-        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
+        
         
     async def __review(self, interaction: discord.Interaction):
         """Callback on review button press. Prompts the user for an album review
@@ -210,18 +208,13 @@ class ReviewButtons(ui.View):
         """   
         print("Review")
 
-class AddButtons(ui.View):
+class AddPaginator(Paginator):
     """Class for creating an Add Albums view
 
     Parameters
     ----------
-    paginator : `Paginator`
-        The paginator object for this View, used to get the index and list of embeds
-
-    Attributes
-    ----------
-    paginator : `Paginator`
-        The paginator object for this View, used to get the index and list of embeds
+    embedList : `list`
+        The list of embeds to review
 
     Methods (callbacks only, not intended to be called directly)
     ----------
@@ -231,13 +224,10 @@ class AddButtons(ui.View):
         Callback when replacebutton is pressed, album will be removed from AOTY list and replaced by another
     """    
     # Define the actual buttons
-    def __init__(self, paginator: Paginator):
-        super().__init__()
-        #Add the paginator to this view
-        self.paginator = paginator
+    def __init__(self, embedList: list):    
+        super().__init__(embedList)
         self.add_item(EmbedButton(callback=self.__delete, label="Delete", style=discord.ButtonStyle.danger, row=1))
         self.add_item(EmbedButton(callback=self.__replace, label="Replace", style=discord.ButtonStyle.primary, row=1))
-
 
     async def __delete(self, interaction: discord.Interaction):
         """Callback on delete button press. Deletes the album from the AOTY list
@@ -247,11 +237,11 @@ class AddButtons(ui.View):
         interaction : discord.Interaction
             Interaction of the button press event
         """        
-        albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
-        self.paginator.embedList[self.paginator.index].title = "DELETED"
-        self.paginator.embedList[self.paginator.index].color = discord.Color.red()
+        albumURI = self.embedList[self.index].url.rsplit('/', 1)[-1]
+        self.embedList[self.index].title = "DELETED"
+        self.embedList[self.index].color = discord.Color.red()
         sp.deleteAlbum(albumURI, sp.AOTY_PLAYLIST_ID)
-        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
+        await interaction.response.edit_message(embed=self.embedList[self.index])
 
     async def __replace(self, interaction: discord.Interaction):
         """Callback on replace button press. Album will be removed and replaced by another
@@ -299,15 +289,9 @@ async def review(interaction: discord.Interaction):
         embed.add_field(name="Album", value=album.name, inline=False)
         embed.add_field(name="Artist", value=album.artist, inline=False)
         embedList.append(embed)
-        
-    #Construct a paginator view with the embedList
-    url_view = Paginator(embedList)
 
     #Add the review buttons to the view, send the response
-    reviewButtons = ReviewButtons(url_view)
-    for item in reviewButtons.children: 
-            url_view.add_item(item)
-    await interaction.response.send_message(embed=embedList[0], view=url_view)
+    await interaction.response.send_message(embed=embedList[0], view=ReviewPaginator(embedList))
 
 @bot.tree.command(description="Add album to AOTY playlist")
 @app_commands.describe(
@@ -367,15 +351,8 @@ async def add(interaction: discord.Interaction, amount: int = 5):
         embed.add_field(name="Artist", value=album.artist, inline=False)
         embed.set_footer(text="Retrieved from highest-rated/2022")
         embedList.append(embed)
-    
-    #Construct a paginator view with the embedList
-    view = Paginator(embedList)
 
-    addButtons = AddButtons(view)
-    for item in addButtons.children:
-        view.add_item(item)
-
-    await interaction.followup.send(embed=embedList[0], view=view)
+    await interaction.followup.send(embed=embedList[0], view=AddPaginator(embedList))
     
 
 def startBot():

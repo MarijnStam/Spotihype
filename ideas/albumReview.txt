@@ -1,11 +1,6 @@
-We can use discord modals to prompt the user for rating/reviewing the albums in the aoty list.
-Give the user a list of all albums in the aoty list, query the user for a numeric rating and reasoning for the rating.
-Also prompt them for a decision for this album (delete, leave in list, move to liked list)
+**Review** 
+    Prompt the user for a review through a modal form.
 
-Alternatively, we can use Application Commands message context menu, for interacting with an album:
-https://discord.com/developers/docs/interactions/application-commands
-e.g. have the following options in the context menu: Rate (launch modal), Delete, Move to Liked List, Leave in List etc.
-Possibly also use select menus: 
-https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=send%20modal#select
+* Perhaps replace the paginator by a context menu for review action?
 
-We will need to move from !commands to slash commands for this to work
+* Disable buttons on view timeout

@@ -1,1 +1,3 @@
 Give the user the option to skip an add and/or replace it by another
+
+Give the user a dropdown menu to select the playlist they want to fetch from
