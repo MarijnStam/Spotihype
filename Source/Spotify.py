@@ -12,17 +12,27 @@ class NotFoundError(Exception):
     pass
 
 class Album:
-    """Class for holding an album object. Can be initialized with either artist/album name or album URI
-    
-    Args:
-        artistAlbum (tuple): tuple of (artist, album). Defaults to None.
-    Args:
-        uri (string): tuple of (artist, album). Defaults to None.
+    """Class for creating an album.
+    Supply either artistAlbum or uri to find the album.
 
-    Returns:
-        Album object
-    """
+    Parameters
+    ----------
+    artistAlbum : `tuple`, optional
+        A tuple containing (artist, album), by default None
+    uri : `str`, optional
+        The URI of the Spotify Album, by default None
+    json : `str`, optional
+        Raw JSON of the album, NOT SUPPORTED YET, by default None
+
+    Raises
+    ------
+    `NotFoundError`
+        Raised when album is not found by searching with artistAlbum
+    `NotFoundError`
+        Raised when album is not found by searching with URI
+    """ 
     def __init__(self, artistAlbum: tuple=None, uri: str=None, json: str=None):
+       
         if artistAlbum is not None:
         #Use name/album to find album data
             results = sp.search(q = f"album:{artistAlbum[1]}artist:{artistAlbum[0]}", type = "album")
@@ -53,24 +63,30 @@ class Album:
         return f"Artist: {self.artist}\nName: {self.name}\nURI: {self.uri}\n"
   
 def addAlbumToPlaylist(albumURI: str=None, playlist: str=None):
-    """Add an album to a playlist given their respective ids
+    """Adds an album to a playlist given its URI and the playlist's URI
 
-    Args:
-        albumURI : URI of the album. Defaults to None.
-        playlist : ID of the playlist. Defaults to None.
-    """
+    Parameters
+    ----------
+    albumURI : `str`, optional
+        URI of the album, by default None
+    playlist : `str`, optional
+        URI of the playlist, by default None
+    """    
     albumTracks = sp.album_tracks(albumURI)
     for y in albumTracks['items']:
         sp.playlist_add_items(playlist, [y['id']])
 
-def getPlaylistTracks(playlist: str=None):
-    """Retrieves the tracks of a playlist given its ID
+def getPlaylistAlbums(playlist: str):
+    """Gets a list of albums from a playlist
 
-    Args:
-        playlist (str, optional): URI of the playlist. Defaults to None.
+    Parameters
+    ----------
+    playlist : `str`
+        URI of the playlist, by default None
 
-    Returns:
-        list: list of Album objects
+    Returns
+    -------
+    `list` of `Album` objects
     """
     albumList = []
     uriList = []
@@ -87,27 +103,51 @@ def getPlaylistTracks(playlist: str=None):
             uriList.append(albumUri)
     return albumList
         
-def moveAlbum(albumURI: str=None, sourcePlaylist: str=None, targetPlaylist: str=None):
+def moveAlbum(albumURI: str, sourcePlaylist: str, targetPlaylist: str):
+    """Moves an album from one playlist to another.
+
+    Parameters
+    ----------
+    albumURI : `str`
+        URI of the album to move.
+    sourcePlaylist : `str`
+        URI of the playlist to remove the album from.
+    targetPlaylist : `str`
+        URI of the playlist to move the album to.
+    """    
     albumTracks = sp.album_tracks(albumURI)
     for y in albumTracks['items']:
         sp.playlist_remove_all_occurrences_of_items(sourcePlaylist, [y['id']])
         sp.playlist_add_items(targetPlaylist, [y['id']])
 
-def deleteAlbum(albumURI: str=None, playlist: str=None):
+def deleteAlbum(albumURI: str, playlist: str):
+    """Deletes an album from a playlist given its URI and the playlist's URI.
+
+    Parameters
+    ----------
+    albumURI : `str`
+        URI of the album to delete.
+    playlist : `str`
+        URI of the playlist to delete the album from.
+    """
     albumTracks = sp.album_tracks(albumURI)
     for y in albumTracks['items']:
         sp.playlist_remove_all_occurrences_of_items(playlist, [y['id']])
 
-def getPlaylist(playlist_id: str=None):
-    """Retrieves the name and the link to a playlist given its ID
+def getPlaylist(playlist_id: str):
+    """Gets a playlist name and link, given its URI.
 
-    Args:
-        playlist_id (str, optional): URI ID of the playlist. Defaults to None.
+    Parameters
+    ----------
+    playlist_id : `str`
+        URI of the playlist to get
 
-    Returns:
-        name: name of the playlist
-        link: link to the playlist
+    Returns
+    -------
+    `str`
+        Playlist name
+    `str`
+        Playlist link
     """
     results = sp.playlist(playlist_id)
-
     return results['name'], results['external_urls']['spotify']

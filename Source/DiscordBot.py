@@ -1,4 +1,5 @@
 from subprocess import call
+from xml.dom.xmlbuilder import _DOMInputSourceStringDataType
 import discord
 from discord import app_commands
 from discord import ui
@@ -21,6 +22,18 @@ GUILD_ID            = os.getenv('DISCORD_GUILD')
 GUILD = discord.Object(id=GUILD_ID)
 
 class SpotihypeBot(discord.Client):
+    """Class for the bot itself, subclasses `discord.Client`
+
+    Parameters
+    ----------
+    intents : `discord.Intents`
+        Needed intents for the bot
+    
+    Attributes
+    ----------
+        tree : `app_commands.CommandTree`
+            The command tree for the bot
+    """    
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
@@ -31,10 +44,12 @@ class SpotihypeBot(discord.Client):
         await self.tree.sync(guild=GUILD)
 
 class EmbedButton(ui.Button):
-    """Class for creating a discord button
+    """Class for creating a Discord button component
 
-    Args:
-        ui.Button: Button needs to be subclassed
+    Attributes
+    ----------
+        callback : optional
+            Callback for the button event, by default `None`
     """
     def __init__(self, callback=None, **kwargs):
         #Init the button with kwargs elements
@@ -43,28 +58,44 @@ class EmbedButton(ui.Button):
             self.callback = callback
         
 class Paginator(ui.View):
-    """Class for making a paginator for the album list
+    """Class for creating a Disocrd paginator View to scroll through a list of Embeds
 
-    Args:
-        ui.View: View needs to be subclassed
-    """
-    def __init__(self, albumList: list):
+    Parameters
+    ----------
+        embedList : `list`
+            List of embeds to paginate through
+
+    Attributes
+    ----------
+        embedList : `list`
+            List of embeds to paginate through
+        index : `int`
+            Index of the current embed
+    """ 
+    def __init__(self, embedList: list):     
         super().__init__()
-        self.albumList = albumList
+        self.embedList = embedList
         self.index = 0
         #Create the paginator buttons, pass the callbacks defined in this class
         self.add_item(EmbedButton(callback=self.left, emoji="⬅", disabled=True, custom_id="left"))
-        self.add_item(EmbedButton(label=f"0 / {len(albumList) - 1}", custom_id="index", disabled=True))
+        self.add_item(EmbedButton(label=f"0 / {len(embedList) - 1}", custom_id="index", disabled=True))
         self.add_item(EmbedButton(callback=self.right, emoji="➡", custom_id="right"))
 
     #Callback function for the right button
     async def right(self, interaction: discord.Interaction):
+        """Callback for the paginate right button. Scrolls the paginator right
+        and updates the index of the counter.
 
+        Parameters
+        ----------
+        interaction : `discord.Interaction`
+            The discord interaction event that triggered the callback
+        """    
         #Disable the button when we have reached the last index
-        if self.index == len(self.albumList) - 2:
+        if self.index == len(self.embedList) - 2:
             self.children[2].disabled=True
             self.index += 1
-        elif self.index < len(self.albumList) - 1:
+        elif self.index < len(self.embedList) - 1:
             self.index += 1
         else:
             return
@@ -72,12 +103,19 @@ class Paginator(ui.View):
         #Set the left button disabled to False since we have scrolled right
         #Update the index of the counter
         self.children[0].disabled = False
-        self.children[1].label = f"{self.index} / {len(self.albumList) - 1}"
+        self.children[1].label = f"{self.index} / {len(self.embedList) - 1}"
 
-        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
+        await interaction.response.edit_message(embed=self.embedList[self.index],view=self)
 
     async def left(self, interaction: discord.Interaction):            
+        """Callback for the paginate left button. Scrolls the paginator left
+        and updates the index of the counter.
 
+        Parameters
+        ----------
+        interaction : `discord.Interaction`
+            The discord interaction event that triggered the callback
+        """    
         #Disable the button when we have reached the first index
         if self.index == 1:
             self.children[0].disabled=True
@@ -90,9 +128,9 @@ class Paginator(ui.View):
         #Set the right button disabled to False since we have scrolled left
         #Update the index of the counter
         self.children[2].disabled = False
-        self.children[1].label = f"{self.index} / {len(self.albumList) - 1}"
+        self.children[1].label = f"{self.index} / {len(self.embedList) - 1}"
 
-        await interaction.response.edit_message(embed=self.albumList[self.index],view=self)
+        await interaction.response.edit_message(embed=self.embedList[self.index],view=self)
 
 class ReviewButtons(ui.View):
     # Define the actual button
@@ -116,8 +154,6 @@ bot = SpotihypeBot(intents=intents)
 
 @bot.event
 async def on_ready():
-    #Singleton variables for interacting with the discord server
-    global channel
     print('We have logged in as {0.user}'.format(bot))
 
 @bot.event
@@ -146,10 +182,20 @@ async def on_reaction_add(reaction, user):
 
 @bot.tree.command(description="Review albums in the AOTY playlist")
 async def review(interaction: discord.Interaction):
+    """Review command which sends a paginated list of Embeds to the user.
+    The user can scroll through the list and perform actions on the albums.
+
+    Parameters
+    ----------
+    interaction : `discord.Interaction`
+        The interaction event that triggered the command. Contains the context
+    """    
     albums = sp.getPlaylistTracks(sp.AOTY_PLAYLIST_ID)
     embedList = []
-    #Embedlist supports up to 10 albums
-    for index, album in zip(range(10), albums):
+
+    #Iterate through the albums retrieved and construct an Embed for each one
+    #Appends the embed to the embedList
+    for album in albums:
         embed=discord.Embed(
             title="Album Review",
             url=f"{album.link}",
@@ -160,10 +206,14 @@ async def review(interaction: discord.Interaction):
         embed.add_field(name="Artist", value=album.artist, inline=False)
         embedList.append(embed)
         
+    #Construct a paginator view with the embedList
     url_view = Paginator(albumList=embedList)
+
+    #Add the review buttons to the view
     reviewButtons = ReviewButtons()
     for item in reviewButtons.children: 
         url_view.add_item(item)
+
     await interaction.response.send_message(embed=embedList[0], view=url_view)
 
 @bot.tree.command(description="Add album to AOTY playlist")
@@ -171,7 +221,15 @@ async def review(interaction: discord.Interaction):
     amount='Amount of albums to add',
 )
 async def add(interaction: discord.Interaction, amount: int = 5):
+    """Add command which adds albums to the AOTY playlist.
 
+    Parameters
+    ----------
+    interaction : `discord.Interaction`
+        The interaction event that triggered the command. Contains the context
+    amount : `int`, optional
+        amount of albums to add, by default 5
+    """
     amount = int(amount)
     if((amount <= 0) or (amount >= 21)):
         await interaction.response.send_message(f"Please enter a valid range between 0 - 20")
@@ -220,5 +278,7 @@ async def add(interaction: discord.Interaction, amount: int = 5):
     
 
 def startBot():
+    """Starts the Discord bot with a static token
+    """    
     print("Starting bot")
     bot.run(TOKEN)

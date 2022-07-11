@@ -4,12 +4,14 @@ import urllib.request
 
 
 def getAlbums():
-    """Retrieves a list of album names from a rating site
 
-    Returns:
+    """Gets a list of highest rated albums from a website
+
+    Returns
+    -------
+    `tuple`
         List of tuples: : [(artist, album), (artist, album), etc]
-    """
-
+    """    
     #Make a list of tuples for the albums. [(artist, album), (artist, album), etc]
     albumList = []
     

@@ -5,9 +5,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class SQLite:
     """
-    This class is a context manager for the database.
-    Use this for handling db operations within this file
+    A class used to connect to the database.
+
+
+    Attributes
+    ----------
+        dbName : `str`
+            Path to the db in the filesystem
+    Methods
+    -------
+        `addAlbum(artist: str, name: str, uri: str)`
+            Adds an album to the db
     """
+
     def __init__(self):
         self.dbName = os.path.join(BASE_DIR, "AlbumsDB.db")
     def __enter__(self):
@@ -17,13 +27,22 @@ class SQLite:
         self.conn.commit()
         self.conn.close()
 
-def addAlbum(artist: str=None, name: str=None, uri: str=None):
-    """Adds an album entry to the db
+def addAlbum(artist: str, name: str, uri: str):
+    """Adds an album to the database
 
-    Args:
-        artist (str): Defaults to None.
-        name (str): Defaults to None.
-        uri (str): Defaults to None.
+    Parameters
+    ----------
+    artist : `str`
+        Name of the artist
+    name : `str`
+        Name of the album
+    uri : `str`
+        URI of the album
+
+    Raises
+    ------
+    `sqlite3.Error`
+        Error raised when an album URI is already present in the database
     """
     with SQLite() as cur:
         try:
