@@ -62,15 +62,15 @@ class Album:
     def __str__(self) -> str:
         return f"Artist: {self.artist}\nName: {self.name}\nURI: {self.uri}\n"
   
-def addAlbumToPlaylist(albumURI: str=None, playlist: str=None):
+def addAlbumToPlaylist(albumURI: str, playlist: str):
     """Adds an album to a playlist given its URI and the playlist's URI
 
     Parameters
     ----------
-    albumURI : `str`, optional
-        URI of the album, by default None
-    playlist : `str`, optional
-        URI of the playlist, by default None
+    albumURI : `str`
+        URI of the album
+    playlist : `str`
+        URI of the playlist
     """    
     albumTracks = sp.album_tracks(albumURI)
     for y in albumTracks['items']:

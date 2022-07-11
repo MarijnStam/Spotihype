@@ -84,7 +84,11 @@ class Paginator(ui.View):
         #Create the paginator buttons, pass the callbacks defined in this class
         self.add_item(EmbedButton(callback=self.__left, emoji="⬅", disabled=True, custom_id="left"))
         self.add_item(EmbedButton(label=f"0 / {len(embedList) - 1}", custom_id="index", disabled=True))
-        self.add_item(EmbedButton(callback=self.__right, emoji="➡", custom_id="right"))
+        #Disable the paginator all together if we only have a single embed
+        if len(embedList) > 1:
+            self.add_item(EmbedButton(callback=self.__right, emoji="➡", custom_id="right"))
+        else:
+            self.add_item(EmbedButton(callback=self.__right, emoji="➡", disabled=True, custom_id="right"))
 
     #Callback function for the right button
     async def __right(self, interaction: discord.Interaction):
@@ -179,10 +183,8 @@ class ReviewButtons(ui.View):
         albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
         self.paginator.embedList[self.paginator.index].title = "DELETED"
         self.paginator.embedList[self.paginator.index].color = discord.Color.red()
-        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
-
         sp.deleteAlbum(albumURI, sp.AOTY_PLAYLIST_ID)
-        print("Delete")
+        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
 
     async def __save(self, interaction: discord.Interaction):
         """Callback on save button press. Saves the album to the saved list
@@ -195,10 +197,8 @@ class ReviewButtons(ui.View):
         albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
         self.paginator.embedList[self.paginator.index].title = "SAVED"
         self.paginator.embedList[self.paginator.index].color = discord.Color.green()
-        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
-
         sp.moveAlbum(albumURI, sp.AOTY_PLAYLIST_ID, sp.LIKED_PLAYLIST_ID)
-        print("Save")
+        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
         
     async def __review(self, interaction: discord.Interaction):
         """Callback on review button press. Prompts the user for an album review
@@ -209,7 +209,64 @@ class ReviewButtons(ui.View):
             Interaction of the button press event
         """   
         print("Review")
-    
+
+class AddButtons(ui.View):
+    """Class for creating an Add Albums view
+
+    Parameters
+    ----------
+    paginator : `Paginator`
+        The paginator object for this View, used to get the index and list of embeds
+
+    Attributes
+    ----------
+    paginator : `Paginator`
+        The paginator object for this View, used to get the index and list of embeds
+
+    Methods (callbacks only, not intended to be called directly)
+    ----------
+    `__delete(self, interaction: discord.Interaction)`
+        Callback when delete button is pressed, album will be deleted from AOTY list
+    `__replace(self, interaction: discord.Interaction)`
+        Callback when replacebutton is pressed, album will be removed from AOTY list and replaced by another
+    """    
+    # Define the actual buttons
+    def __init__(self, paginator: Paginator):
+        super().__init__()
+        #Add the paginator to this view
+        self.paginator = paginator
+        self.add_item(EmbedButton(callback=self.__delete, label="Delete", style=discord.ButtonStyle.danger, row=1))
+        self.add_item(EmbedButton(callback=self.__replace, label="Replace", style=discord.ButtonStyle.primary, row=1))
+
+
+    async def __delete(self, interaction: discord.Interaction):
+        """Callback on delete button press. Deletes the album from the AOTY list
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            Interaction of the button press event
+        """        
+        albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
+        self.paginator.embedList[self.paginator.index].title = "DELETED"
+        self.paginator.embedList[self.paginator.index].color = discord.Color.red()
+        sp.deleteAlbum(albumURI, sp.AOTY_PLAYLIST_ID)
+        await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
+
+    async def __replace(self, interaction: discord.Interaction):
+        """Callback on replace button press. Album will be removed and replaced by another
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            Interaction of the button press event
+        """   
+        # albumURI = self.paginator.embedList[self.paginator.index].url.rsplit('/', 1)[-1]
+        # self.paginator.embedList[self.paginator.index].title = "SAVED"
+        # self.paginator.embedList[self.paginator.index].color = discord.Color.green()
+        # await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
+        print("Replace")
+
 intents = discord.Intents.default()
 bot = SpotihypeBot(intents=intents)
 
@@ -276,6 +333,7 @@ async def add(interaction: discord.Interaction, amount: int = 5):
     addedAlbumCount = 0
     embedList = []
 
+#TODO Probably move this functionality away from this command so it can be tested
     while (addedAlbumCount < amount):
         #Retrieve the spotify album from the artist/album info from the webscraper. add the entry to the local db 
         try:
@@ -295,21 +353,25 @@ async def add(interaction: discord.Interaction, amount: int = 5):
 
         finally:
             index = index + 1
-
+                
         embed=discord.Embed(
-        title=f"{album.artist} - {album.name}",
+            title="Album Added",
             url=f"{album.link}",
             color=discord.Color.green())
         embed.set_thumbnail(url=album.img)
-        embed.add_field(name="Added to playlist", value=f"[{playlistName}]({playlistLink})")
-        #TODO Make dynamic
+        embed.add_field(name="Album", value=album.name, inline=False)
+        embed.add_field(name="Artist", value=album.artist, inline=False)
         embed.set_footer(text="Retrieved from highest-rated/2022")
         embedList.append(embed)
     
     #Construct a paginator view with the embedList
-    paginator = Paginator(embedList)
+    view = Paginator(embedList)
 
-    await interaction.followup.send(embed=embedList[0], view=paginator)
+    addButtons = AddButtons(view)
+    for item in addButtons.children:
+        view.add_item(item)
+
+    await interaction.followup.send(embed=embedList[0], view=view)
     
 
 def startBot():
