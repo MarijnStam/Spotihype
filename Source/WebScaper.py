@@ -2,9 +2,13 @@ import sys
 from bs4 import BeautifulSoup
 import urllib.request
 
+#TODO Rewrite this module to use aiohttp
+# async with aiohttp.ClientSession() as cs:
+    # async with cs.get('https://httpbin.org/json') as r:
+    #     res = await r.json()  # returns dict
+
 
 def getAlbums():
-
     """Gets a list of highest rated albums from a website
 
     Returns
