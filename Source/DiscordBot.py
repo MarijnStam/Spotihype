@@ -1,4 +1,3 @@
-from ast import Add
 import discord
 from discord import app_commands
 from discord import ui
@@ -206,7 +205,7 @@ class ReviewPaginator(Paginator):
         interaction : discord.Interaction
             Interaction of the button press event
         """   
-        print("Review")
+        await interaction.response.send_modal(ReviewModal())
 
 class AddPaginator(Paginator):
     """Class for creating an Add Albums view
@@ -256,6 +255,30 @@ class AddPaginator(Paginator):
         # self.paginator.embedList[self.paginator.index].color = discord.Color.green()
         # await interaction.response.edit_message(embed=self.paginator.embedList[self.paginator.index])
         print("Replace")
+
+class ReviewModal(ui.Modal, title='Album Review'):
+    """Class for creating a review modal, prompting user inptu
+
+    Methods (callbacks only, not intended to be called directly)
+    ----------
+    `on_submit(self, interaction: discord.Interaction)`
+        Callback when modal is submitted
+    """    
+    EmbedButton(label="Buttonboi", style=discord.ButtonStyle.primary, row=1)
+    name = ui.TextInput(label='Name', default="Album Name")
+    name = ui.TextInput(label='Name', default="Artist Name")
+    answer = ui.TextInput(label='Answer', style=discord.TextStyle.paragraph)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """Callback on delete button press. Deletes the album from the AOTY list
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            Interaction of the button press event
+        """  
+        print("Submit")      
+        pass
 
 intents = discord.Intents.default()
 bot = SpotihypeBot(intents=intents)
